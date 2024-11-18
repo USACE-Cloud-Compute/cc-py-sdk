@@ -1,4 +1,4 @@
-import cc_py_sdk.filesapi
+import cc.filesapi
 import os
 import re
 import json
@@ -8,10 +8,10 @@ from typing import List, Dict
 from enum import Enum
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
-from cc_py_sdk.datastore import DataStore, IConnectionDataStore
-from cc_py_sdk.datastore_s3 import S3DataStore  # used in globals lookup
-from cc_py_sdk.filesapi import IStreamingBody
-from cc_py_sdk import filesapi
+from cc.datastore import DataStore, IConnectionDataStore
+from cc.datastore_s3 import S3DataStore  # used in globals lookup
+from cc.filesapi import IStreamingBody
+from cc import filesapi
 
 CcPayloadId = "CC_PAYLOAD_ID"
 CcManifestId = "CC_MANIFEST_ID"

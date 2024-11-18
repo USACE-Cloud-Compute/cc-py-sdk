@@ -1,0 +1,80 @@
+{
+  "attributes": {
+    "event_array": "array1",
+    "test123": "TEST123"
+  },
+  "stores": [
+    {
+      "name": "FFRD",
+      "store_type": "S3",
+      "profile": "FFRD",
+      "params": {
+        "root": "/model-library/ffrd-store"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "name": "TestFile",
+      "paths": {
+       "default":"hw.text"
+      },
+      "data_paths": null,
+      "store_name": "FFRD"
+    },
+    {
+      "name": "TestFile2",
+      "paths": {
+       "default":"hwout.txt"
+      },
+      "data_paths": null,
+      "store_name": "FFRD"
+    },
+    {
+      "name": "TestFile3",
+      "paths": {
+       "default":"/test/{ATTR::test123}/hwout.txt"
+      },
+      "data_paths": null,
+      "store_name": "FFRD"
+    },
+    {
+      "name": "TestFile4",
+      "paths": {
+       "default":"hwout.txt"
+      },
+      "data_paths": null,
+      "store_name": "FFRD"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "TestFileOut",
+      "paths": {
+       "default":"hwout.txt"
+      },
+      "data_paths": null,
+      "store_name": "FFRD"
+    },
+    {
+      "name": "TestFileOut2",
+      "paths": {
+       "default":"hwout2.txt"
+      },
+      "data_paths": null,
+      "store_name": "FFRD"
+    }
+  ],
+  "actions": [
+    {
+      "attributes": {
+        "dataset1":"test"
+      },
+      "stores": null,
+      "inputs": null,
+      "outputs": null,
+      "type": "test1",
+      "description": "test1"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import os
 import abc
-from cc_py_sdk.filesapi import *
-from cc_py_sdk.datastore import (
+from cc.filesapi import *
+from cc.datastore import (
     DataStore,
     IStreamingBody,
     IStoreReader,

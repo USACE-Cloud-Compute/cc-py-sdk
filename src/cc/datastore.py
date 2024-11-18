@@ -1,7 +1,7 @@
 import abc
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
-from cc_py_sdk.filesapi import IStreamingBody
+from cc.filesapi import IStreamingBody
 
 
 @dataclass_json
