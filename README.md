@@ -15,7 +15,7 @@ You can install cc-python-sdk in two ways: from source or through the pip packag
 Once cc-python-sdk is installed, you can start using its functionality in your Python projects. Here's a simple example:
 
 ```python
-import cc_sdk
+import cc
 
 # Use the functions and classes provided by cc_sdk
 ```
