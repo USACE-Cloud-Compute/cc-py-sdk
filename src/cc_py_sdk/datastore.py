@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
 from cc_py_sdk.filesapi import IStreamingBody
 
+
 @dataclass_json
 @dataclass
 class DataStore:
@@ -28,18 +29,19 @@ class DataStore:
       Basically just concatonates the store root path to the relative path.
 
     """
+
     name: str
-    store_type:str
-    profile:str
-    params:dict
-    id: str = '' #allow for optional id vals
+    store_type: str
+    profile: str
+    params: dict
+    id: str = ""  # allow for optional id vals
     _session: any = field(init=False)
 
     def __post_init__(self):
-        print(f'Initialized {self.name} store type {self.store_type}')
+        print(f"Initialized {self.name} store type {self.store_type}")
 
-    def full_path(self,relative_path:str)->str:
-        return self.params["root"]+"/"+relative_path
+    def full_path(self, relative_path: str) -> str:
+        return self.params["root"] + "/" + relative_path
 
 
 class IConnectionDataStore(metaclass=abc.ABCMeta):
@@ -50,8 +52,9 @@ class IConnectionDataStore(metaclass=abc.ABCMeta):
     - connect(ds:DataStore): given the type and configuration of the DataStore,
       creates a connection to the store
     """
+
     @abc.abstractmethod
-    def connect(self,ds:DataStore):
+    def connect(self, ds: DataStore):
         pass
 
     """
@@ -61,20 +64,23 @@ class IConnectionDataStore(metaclass=abc.ABCMeta):
     Methods:
     - get(path:str, datapath:str): given the path and datapath return a binary reader
     """
+
+
 class IStoreReader(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def get(self,path:str,datapath:str) -> IStreamingBody:
+    def get(self, path: str, datapath: str) -> IStreamingBody:
         pass
+
 
 class IStoreWriter(metaclass=abc.ABCMeta):
     """
     An interface for Data Store Instances that can write binary data.
-    
+
 
     Methods:
     - put(reader:IStreamingBody, path:str, datapath:str): given a reader and path and datapath, write the data
     """
-    @abc.abstractmethod
-    def put(self,reader:IStreamingBody,destpath:str, datapath:str):
-        pass
 
+    @abc.abstractmethod
+    def put(self, reader: IStreamingBody, destpath: str, datapath: str):
+        pass

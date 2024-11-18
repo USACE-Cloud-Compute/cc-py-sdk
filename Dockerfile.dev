@@ -1,6 +1,7 @@
 FROM go-gdal-hdf5-1.23-tiledb
 
 ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/workspaces/cc_py_sdk/src
 
 COPY cookiecutter.yaml /workspaces/cookiecutter.yaml
 
@@ -8,6 +9,8 @@ RUN ln -s /usr/bin/python3 /usr/bin/python &&\
     apt update &&\
     apt -y install pip &&\
     apt -y install pipx &&\
+    apt -y install python3-sphinx &&\
+    apt -y install python3-sphinxcontrib.apidoc
     pip install pylance &&\
     pip install pytest &&\
     pipx install cookiecutter &&\
