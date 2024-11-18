@@ -99,9 +99,7 @@ class Action:
     def get_output_data_source(self, name: str) -> DataSource:
         return self._iomgr.get_output_data_source(name)
 
-    def get_reader(
-        self, data_source_name: str, pathkey: str, datapathkey: str
-    ) -> IStreamingBody:
+    def get_reader(self, data_source_name: str, pathkey: str, datapathkey: str) -> IStreamingBody:
         return self._iomgr.get_reader(data_source_name, pathkey, datapathkey)
 
     def get(self, data_source_name: str, pathkey: str, datapathkey: str) -> bytes:
@@ -152,9 +150,7 @@ class PluginManager:
             self.ccroot = DEFAULT_CC_ROOT
 
         # set the CC Store
-        self.store = filesapi.NewS3FileStore(
-            CcProfile, bucket=os.environ[f"{CcProfile}_{filesapi.S3_BUCKET}"]
-        )
+        self.store = filesapi.NewS3FileStore(CcProfile, bucket=os.environ[f"{CcProfile}_{filesapi.S3_BUCKET}"])
 
         # grab the payload
         self.payloadId = os.environ[CcPayloadId]
@@ -207,9 +203,7 @@ class PluginManager:
     def get_output_data_source(self, name: str) -> DataSource:
         return self._iomgr.get_output_data_source(name)
 
-    def get_reader(
-        self, data_source_name: str, pathkey: str, datapathkey: str
-    ) -> IStreamingBody:
+    def get_reader(self, data_source_name: str, pathkey: str, datapathkey: str) -> IStreamingBody:
         return self._iomgr.get_reader(data_source_name, pathkey, datapathkey)
 
     def get(self, data_source_name: str, pathkey: str, datapathkey: str) -> bytes:
@@ -236,9 +230,7 @@ class PluginManager:
 
     def _substitutePathVariables(self):
         for input in self._iomgr.inputs:
-            newpath = parameter_substitute(
-                input.paths["default"], self._iomgr.attributes
-            )
+            newpath = parameter_substitute(input.paths["default"], self._iomgr.attributes)
             print(newpath)
 
 
@@ -283,9 +275,7 @@ class Iomgr:
         streamingBody = data_store._session.get(path, None)
         return streamingBody
 
-    def put(
-        self, reader: IStreamingBody, data_source_name: str, pathkey: str, datakey: str
-    ):
+    def put(self, reader: IStreamingBody, data_source_name: str, pathkey: str, datakey: str):
         data_source = self.get_output_data_source(data_source_name)
         data_store = self.get_store(data_source.store_name)
         # path=data_store.params["root"]+"/"+data_source.paths[pathkey]
