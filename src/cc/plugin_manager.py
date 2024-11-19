@@ -3,6 +3,7 @@ import os
 import re
 import json
 import shutil
+import logging
 from collections import namedtuple
 from typing import List, Dict
 from enum import Enum
@@ -12,6 +13,7 @@ from cc.datastore import DataStore, IConnectionDataStore
 from cc.datastore_s3 import S3DataStore  # used in globals lookup
 from cc.filesapi import IStreamingBody
 from cc import filesapi
+from cc import logger
 
 CcPayloadId = "CC_PAYLOAD_ID"
 CcManifestId = "CC_MANIFEST_ID"
@@ -74,6 +76,24 @@ class DataSource:
 @dataclass_json
 @dataclass
 class Action:
+    """
+    Class for plugin actions.  Actions can have their own private set of attributes, stores, inputs, and outputs
+
+    Attributes:
+    - type : str
+        The type of the action. readonly
+    - description : str
+        The description of the action. readonly
+    - attributes : dict[str, str]
+        The set of attributes private to the action. readonly
+    - stores : List[DataStore]
+        The list of DataStores private to the action. readonly
+    - inputs : List[DataSource]
+        The list of input DataSources private to the action. readonly
+    - outputs : List[DataSource]
+        the list of output DataSources private to the action. readonly
+    """
+
     type: str
     description: str
     attributes: dict
@@ -145,6 +165,13 @@ class Payload:
 
 class PluginManager:
     def __init__(self):
+        self.manifestId = os.environ[CcManifestId]
+        self.payloadId = os.environ[CcPayloadId]
+
+        # initialize logging configuration
+        logger.initLogger()
+        logging.info(f"Running: Manifest {self.manifestId}, Payload {self.payloadId}")
+
         self.ccroot = os.environ[CcRootPath]
         if self.ccroot == "":
             self.ccroot = DEFAULT_CC_ROOT
@@ -153,7 +180,7 @@ class PluginManager:
         self.store = filesapi.NewS3FileStore(CcProfile, bucket=os.environ[f"{CcProfile}_{filesapi.S3_BUCKET}"])
 
         # grab the payload
-        self.payloadId = os.environ[CcPayloadId]
+
         path = f"{self.ccroot}/{self.payloadId}/{PAYLOAD_FILE_NAME}"
         reader = self.store.get_object(path)
         content = reader.read()
@@ -169,7 +196,6 @@ class PluginManager:
 
         # enumerate stores and connect to ones that implement IConnectionDataStore
         for store in self.payload.stores:
-            print(store.name)
             classType = storeTypeToClassMap.get(store.store_type, None)
             if classType != None:
                 instance = getNewClassInstance(classType)
@@ -230,8 +256,21 @@ class PluginManager:
 
     def _substitutePathVariables(self):
         for input in self._iomgr.inputs:
-            newpath = parameter_substitute(input.paths["default"], self._iomgr.attributes)
-            print(newpath)
+            _handle_param_substitution(input.paths, self._iomgr.attributes)
+            _handle_param_substitution(input.data_paths, self._iomgr.attributes)
+
+        for output in self._iomgr.outputs:
+            _handle_param_substitution(output.paths, self._iomgr.attributes)
+            _handle_param_substitution(output.data_paths, self._iomgr.attributes)
+
+        for action in self.payload.actions:
+            for input in action._iomgr.inputs:
+                _handle_param_substitution(input.paths, self._iomgr.attributes | action._iomgr.attributes)
+                _handle_param_substitution(input.data_paths, self._iomgr.attributes | action._iomgr.attributes)
+
+            for output in action._iomgr.outputs:
+                _handle_param_substitution(output.paths, self._iomgr.attributes | action._iomgr.attributes)
+                _handle_param_substitution(output.data_paths, self._iomgr.attributes | action._iomgr.attributes)
 
 
 class Iomgr:
@@ -309,8 +348,14 @@ class Iomgr:
             deststore._session.put(f, destpath, None)
 
 
-def parameter_substitute(param: str, attrs: dict) -> str:
-    submatches = re.findall(substitutionPattern, param)
+def _handle_param_substitution(paths: dict, attrs: dict):
+    for name, path in paths.items():
+        newpath = _parameter_substitute(path, attrs)
+        paths[name] = newpath
+
+
+def _parameter_substitute(path: str, attrs: dict) -> str:
+    submatches = re.findall(substitutionPattern, path)
     for sub in submatches:
         parts = sub.split("::")
         match parts[0]:
@@ -318,4 +363,4 @@ def parameter_substitute(param: str, attrs: dict) -> str:
                 newval = attrs[parts[1]]
             case "ENV":
                 newval = os.environ[parts[1]]
-        return param.replace(f"{{{sub}}}", newval)
+        return path.replace(f"{{{sub}}}", newval)

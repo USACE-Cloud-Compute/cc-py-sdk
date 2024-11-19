@@ -1,5 +1,6 @@
 import pytest
 import os
+import logging
 
 
 def test_plugin_manager():
@@ -13,3 +14,4 @@ def test_plugin_manager():
     assert len(pl.outputs) == 2
     assert len(pl.actions) == 1
     # assert 'TEST123' in pl.attributes["test123"]
+    logging.info("TEST1234")

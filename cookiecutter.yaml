@@ -3,7 +3,7 @@ default_context:
     email: "randal.s.goss@usace.army.mil"
     github_username: "rgoss"
     project_name: "cc-py-sdk"
-    project_slug: "cc_py_sdk"
+    project_slug: "cc"
     project_short_description: "The sdk"
     pypi_username: "rgoss"
     version: "0.1.0"
