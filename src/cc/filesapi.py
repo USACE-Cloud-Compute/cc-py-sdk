@@ -1,5 +1,6 @@
 import os
 import abc
+from typing import List
 from collections import namedtuple
 import boto3
 from boto3.s3.transfer import TransferConfig
@@ -31,14 +32,23 @@ class IStreamingBody(metaclass=abc.ABCMeta):
 
 
 class S3FileInfo:
+    """
+    Implements the FileInfo interface for S3 object summaries.
+
+    Methods:
+    - name()->str: returns the name (i.e. the file portion of the S3 object key)
+    - size()->int: returns the size of the object in bytes
+    - mod_time()->date: returns the date/time that the object was last modified
+    - is_dir()->bool: returns a boolean indicating if the object represents an s3 prefix
+    """
 
     def __init__(self, objectSummary):
         self.objectSummary = objectSummary
 
-    def name(self):
+    def name(self) -> str:
         return os.path.basename(self.objectSummary.key)
 
-    def size(self):
+    def size(self) -> int:
         return self.objectSummary.size
 
     def mod_time(self):
@@ -59,18 +69,40 @@ def NewS3FileStore(profile, bucket):
 
 
 class S3FileStore:
+    """
+    S3 FileStore implementation.
+
+    Attributes:
+    - bucket : str
+        The name of the S3 bucket. readonly
+    - session : boto3.Session
+        The S3 session. readonly
+    - resource: boto3.Resource
+        The boto3 S3 resource object
+    - client: boto3.Client
+        the boto3 S3 Client object
+
+    Methods:
+    - get_object_info(path:str)->S3FileInfo: takes a path (s3 key) and returns a wrapped S3 ObjectSummary
+    - get_dir(path:str)->List[FileStoreResultObject]: for the given path will return all directories (common prefixes in S3)
+        and files at the path.  Does not recurse into subdirectories.
+    - get_object(path:str)->IStreamingBody: for the given file object returns a IStreamingBody (e.g. binary reader)
+    - put_object(path:str,reader:IStreamingBody): copies the reader to the given path in S3.
+        uses the boto3 upload_fileobj and supports large multipart uploads
+    """
+
     def __init__(self, session, bucket):
         self.bucket = bucket
         self.session = session
         self.resource = self.session.resource("s3")
         self.client = self.session.client("s3")
 
-    def get_object_info(self, path):
+    def get_object_info(self, path) -> S3FileInfo:
         s3Path = path.removeprefix("/")
         objectSummary = self.resource.ObjectSummary(self.bucket, s3Path)
         return S3FileInfo(objectSummary)
 
-    def get_dir(self, path):
+    def get_dir(self, path) -> List[FileStoreResultObject]:
         s3Path = path.removeprefix("/")
         if s3Path[-1] != "/":
             s3Path = s3Path + "/"
@@ -81,9 +113,7 @@ class S3FileStore:
         result = []
         for page in page_iterator:
             for prefix in page["CommonPrefixes"]:
-                fso = FileStoreResultObject(
-                    count, prefix["Prefix"], "", prefix["Prefix"], "", True, "", ""
-                )
+                fso = FileStoreResultObject(count, prefix["Prefix"], "", prefix["Prefix"], "", True, "", "")
                 result.append(fso)
                 count = count + 1
             for s3object in page["Contents"]:
@@ -106,7 +136,7 @@ class S3FileStore:
         s3object = self.resource.Object(self.bucket, s3Path)
         return s3object.get()["Body"]
 
-    def put_object(self, path, reader):
+    def put_object(self, path: str, reader: IStreamingBody):
         s3Path = path.removeprefix("/")
         config = TransferConfig(
             multipart_threshold=MULTIPART_THRESHOLD,
