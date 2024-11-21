@@ -1,23 +1,7 @@
-FROM go-gdal-hdf5-1.23-tiledb
+FROM cc-python-plugin
 
-ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONPATH=/workspaces/cc_py_sdk/src
 
-COPY cookiecutter.yaml /workspaces/cookiecutter.yaml
-
-RUN ln -s /usr/bin/python3 /usr/bin/python &&\
-    apt update &&\
-    apt -y install pip &&\
-    apt -y install pipx &&\
-    apt -y install python3-sphinx &&\
-    apt -y install python3-sphinxcontrib.apidoc
-    pip install pylance &&\
-    pip install pytest &&\
-    pipx install cookiecutter &&\
-    python3 -m pip install black &&\
-    python3 -m pip install boto3 &&\
-    python3 -m pip install dataclasses &&\
-    python3 -m pip install dataclasses-json &&\
-    mkdir -p /usr/local/py-utils/bin &&\
-    ln -s /usr/local/bin/black /usr/local/py-utils/bin/black &&\
-    cookiecutter -f -o /workspaces --no-input --config-file /workspaces/cookiecutter.yaml  gh:audreyfeldroy/cookiecutter-pypackage
+RUN pip install pipx &&\
+    pip install setuptools &&\
+    update-alternatives --install /usr/bin/pipx pipx /opt/python/bin/pipx 1

@@ -16,7 +16,6 @@ setup(
         "template",
         "package",
     ],
-    python_requires=">=3.10",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",

@@ -17,16 +17,10 @@ CcLoggingLevels = {
 
 def initLogger():
     cc_log_level = os.environ.get(CcLoggingLevel, "INFO")
-    # logging.basicConfig(stream=sys.stdout, level=CcLoggingLevels[level], format="%(levelname)s | %(asctime)s | %(message)s")
     logging.basicConfig(stream=sys.stdout, format="%(levelname)s | %(asctime)s | %(message)s", level=CcLoggingLevels[cc_log_level])
-    # logging.basicConfig(format="%(levelname)s | %(asctime)s | %(message)s")
-    # logging.basicConfig(format="%(manifest)s - %(message)s")
     # file_handler = logging.FileHandler(filename="tmp.log")
     # stdout_handler = logging.StreamHandler(stream=sys.stdout)
     # handlers = [file_handler, stdout_handler]
-    # # logging.basicConfig(level=logging.DEBUG, format=f"{manifest}: %(levelname)s | %(asctime)s | %(message)s", handlers=handlers)
-    # logging.basicConfig(level=logging.DEBUG, format="%(levelname)s | %(asctime)s | %(message)s", handlers=handlers)
-    # logging.info("ASDFASDFASDF")
 
     # rec_factory = logging.getLogRecordFactory()
 

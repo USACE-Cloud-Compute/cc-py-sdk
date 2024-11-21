@@ -1,0 +1,47 @@
+FROM ubuntu:24.04
+
+ENV PATH=/root/.local/bin:$PATH
+ENV LD_LIBRARY_PATH="/tiledb/lib"
+ENV C_INCLUDE_PATH="/tiledb/include:/tiledb/include/tiledb"
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1
+ENV LIBRARY_PATH="/tiledb/lib"
+
+ARG PYTHON_VERSION=3.13.0
+ARG PYTHON_PREFIX=/opt/python
+ARG TILEDB_VERSION=2.26.2
+ARG TILEDB_PREFIX=/usr/local/lib/tiledb
+
+RUN apt update &&\
+    apt -y install libssl-dev libbz2-dev libgdbm-dev uuid-dev libncurses-dev libffi-dev libgdbm-compat-dev sqlite3 lzma lzma-dev gdal-bin libgdal-dev &&\
+    apt -y install git wget build-essential cmake ninja-build doxygen curl zip unzip tar &&\
+    wget https://github.com/TileDB-Inc/TileDB/archive/refs/tags/${TILEDB_VERSION}.tar.gz &&\
+    tar -xvzf ./${TILEDB_VERSION}.tar.gz  &&\
+    cd TileDB-${TILEDB_VERSION} &&\
+    mkdir build &&\
+    cd build &&\
+    ../bootstrap --prefix=${TILEDB_PREFIX} --enable-s3 --enable-serialization &&\
+    make &&\
+    make install-tiledb
+
+RUN mkdir -p ${PYTHON_PREFIX}  &&\
+    cd ${PYTHON_PREFIX} &&\
+    wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz &&\
+    tar -xvzf Python-${PYTHON_VERSION}.tgz &&\
+    mv Python-${PYTHON_VERSION} ./src/ &&\
+    cd src &&\
+    ./configure prefix=${PYTHON_PREFIX} &&\
+    make &&\
+    make install &&\
+    ${PYTHON_PREFIX}/bin/pip3 install pylance &&\
+    ${PYTHON_PREFIX}/bin/pip3 install pytest &&\
+    ${PYTHON_PREFIX}/bin/python3 -m pip install black &&\
+    ${PYTHON_PREFIX}/bin/python3 -m pip install boto3 &&\
+    ${PYTHON_PREFIX}/bin/python3 -m pip install dataclasses &&\
+    ${PYTHON_PREFIX}/bin/python3 -m pip install dataclasses-json &&\
+    mkdir -p /usr/local/py-utils/bin &&\
+    ln -s /usr/local/bin/black /usr/local/py-utils/bin/black &&\
+    cd / &&\
+    git clone https://github.com/TileDB-Inc/TileDB-Py.git &&\
+    cd /TileDB-Py &&\
+    TILEDB_PATH=${TILEDB_PREFIX} ${PYTHON_PREFIX}/bin/pip3 install .
+

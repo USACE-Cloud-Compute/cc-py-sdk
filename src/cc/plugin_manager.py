@@ -158,6 +158,8 @@ class Payload:
 
     def __post_init__(self):
         self._iomgr = Iomgr(self.attributes, self.stores, self.inputs, self.outputs)
+        for action in self.actions:
+            action._iomgr = Iomgr(action.attributes, action.stores, action.inputs, action.outputs)
 
     def get_store(self, name: str) -> DataStore:
         return self._iomgr.get_store(name)
@@ -275,10 +277,25 @@ class PluginManager:
 
 class Iomgr:
     def __init__(self, attrs, stores, inputs, outputs):
-        self.attributes = attrs
-        self.stores = stores
-        self.inputs = inputs
-        self.outputs = outputs
+        if attrs == None:
+            self.attributes = {}
+        else:
+            self.attributes = attrs
+
+        if stores == None:
+            self.stores = []
+        else:
+            self.stores = stores
+
+        if inputs == None:
+            self.inputs = []
+        else:
+            self.inputs = inputs
+
+        if outputs == None:
+            self.outputs = []
+        else:
+            self.outputs = outputs
 
     def get_store(self, name: str) -> DataStore:
         for ds in self.stores:
@@ -349,9 +366,10 @@ class Iomgr:
 
 
 def _handle_param_substitution(paths: dict, attrs: dict):
-    for name, path in paths.items():
-        newpath = _parameter_substitute(path, attrs)
-        paths[name] = newpath
+    if paths != None and len(paths) > 0:
+        for name, path in paths.items():
+            newpath = _parameter_substitute(path, attrs)
+            paths[name] = newpath
 
 
 def _parameter_substitute(path: str, attrs: dict) -> str:
