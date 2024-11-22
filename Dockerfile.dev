@@ -2,6 +2,4 @@ FROM cc-python-plugin
 
 ENV PYTHONPATH=/workspaces/cc_py_sdk/src
 
-RUN pip install pipx &&\
-    pip install setuptools &&\
-    update-alternatives --install /usr/bin/pipx pipx /opt/python/bin/pipx 1
+RUN pip install setuptools
