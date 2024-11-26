@@ -11,6 +11,14 @@
       "params": {
         "root": "/model-library/ffrd-store"
       }
+    },
+    {
+      "name": "EVENT_STORE",
+      "store_type": "TILEDB",
+      "profile": "FFRD",
+      "params": {
+        "root": "/model-library/ffrd-store"
+      }
     }
   ],
   "inputs": [
