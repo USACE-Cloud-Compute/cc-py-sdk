@@ -63,10 +63,10 @@ class PutSimpleArrayInput:
     buffer: any
     dims: List[int]
     array_path: str
-    cell_layout: LayoutOrder
-    tile_layout: LayoutOrder
-    put_payout: LayoutOrder
     tile_extent: List[int]
+    cell_layout: LayoutOrder = field(default=LayoutOrder.ROWMAJOR)
+    tile_layout: LayoutOrder = field(default=LayoutOrder.ROWMAJOR)
+    put_layout: LayoutOrder = field(default=LayoutOrder.ROWMAJOR)
 
 
 @dataclass

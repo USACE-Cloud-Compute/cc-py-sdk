@@ -27,6 +27,7 @@ CcRootPath = "CC_ROOT"
 DEFAULT_CC_ROOT = "/cc_store"
 PAYLOAD_FILE_NAME = "payload"
 substitutionPattern = "{([^{}]*)}"
+Version = "0.0.1"
 
 DsIoType = Enum("DsIoType", [("INPUT", 1), ("OUTPUT", 2), ("ALL", 3)])
 DataSourceOpInput = namedtuple("DataSourceOpInput", ["name", "pathkey", "datakey"])
@@ -224,7 +225,7 @@ class PluginManager:
         return self._iomgr.outputs
 
     def get_store(self, name: str) -> DataStore:
-        return self._iomgr.get_store
+        return self._iomgr.get_store(name)
 
     def get_data_source(self, name: str, iotype: DsIoType) -> DataSource:
         return self._iomgr.get_data_source(name, iotype)
@@ -385,4 +386,5 @@ def _parameter_substitute(path: str, attrs: dict) -> str:
                 newval = attrs[parts[1]]
             case "ENV":
                 newval = os.environ[parts[1]]
-        return path.replace(f"{{{sub}}}", newval)
+        path = path.replace(f"{{{sub}}}", newval)
+    return path

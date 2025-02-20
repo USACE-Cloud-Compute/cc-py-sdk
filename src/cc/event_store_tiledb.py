@@ -39,6 +39,7 @@ class TileDbEventStore:
         obj_type = tiledb.object_type(uri, self.context)
         if obj_type != None:
             return  # already created the array
+
         # need to create the array that will hold metadata
         dims = tiledb.Dim(name="rows", domain=(1, 1), tile=1, dtype=np.int32)
         dom = tiledb.Domain(dims, ctx=self.context)
@@ -110,3 +111,15 @@ class TileDbEventStore:
                 return q.df[*slices]
             else:
                 return q[*slices]
+
+    def put_metadata(self, key: str, val: any):
+        with tiledb.Array(self.uri + "/" + _defaultMetadataPath, "w") as array:
+            array.meta[key] = val
+
+    def get_metadata(self, key: str) -> any:
+        with tiledb.Array(self.uri + "/" + _defaultMetadataPath, "r") as array:
+            return array.meta[key]
+
+    def del_metadata(self, key: str):
+        with tiledb.Array(self.uri + "/" + _defaultMetadataPath, "w") as array:
+            del array.meta[key]

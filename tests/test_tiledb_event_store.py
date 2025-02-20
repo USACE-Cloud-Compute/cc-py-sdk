@@ -76,3 +76,19 @@ def test_read_tiledb_event_store():
     result = tdb.get_array(getInput)
 
     print(result)
+
+
+def test_metadata_tiledb_event_store():
+    from cc import event_store_tiledb
+    from cc import event_store
+    from cc import plugin_manager
+
+    pm = plugin_manager.PluginManager()
+    pl = pm.get_payload()
+    estore = pl.get_store("EVENT_STORE")
+    tdb = event_store_tiledb.TileDbEventStore()
+    tdb.connect(estore)
+    tdb.put_metadata("TEST1", "ABCDEFG")
+    a = tdb.get_metadata("TEST1")
+    print(a)
+    tdb.del_metadata("TEST1")
