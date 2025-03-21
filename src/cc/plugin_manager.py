@@ -11,23 +11,20 @@ from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
 from cc.datastore import DataStore, IConnectionDataStore
 from cc.datastore_s3 import S3DataStore  # used in globals lookup
-from cc.filesapi import IStreamingBody
+from cc.filesapi import *
 from cc import filesapi
 from cc import logger
 
 CcPayloadId = "CC_PAYLOAD_ID"
 CcManifestId = "CC_MANIFEST_ID"
 CcEventNumber = "CC_EVENT_NUMBER"
-AwsAccessKeyId = "AWS_ACCESS_KEY_ID"
-AwsSecretAccessKey = "AWS_SECRET_ACCESS_KEY"
-AwsDefaultRegion = "AWS_REGION"
-AwsS3Bucket = "AWS_BUCKET"
+CcEventIdentifier = "CC_EVENT_IDENTIFIER"
 CcProfile = "CC"
 CcRootPath = "CC_ROOT"
 DEFAULT_CC_ROOT = "/cc_store"
 PAYLOAD_FILE_NAME = "payload"
 substitutionPattern = "{([^{}]*)}"
-Version = "0.0.1"
+Version = "0.9.0"
 
 DsIoType = Enum("DsIoType", [("INPUT", 1), ("OUTPUT", 2), ("ALL", 3)])
 DataSourceOpInput = namedtuple("DataSourceOpInput", ["name", "pathkey", "datakey"])
@@ -184,7 +181,7 @@ class PluginManager:
             self.ccroot = DEFAULT_CC_ROOT
 
         # set the CC Store
-        self.store = filesapi.NewS3FileStore(CcProfile, bucket=os.environ[f"{CcProfile}_{filesapi.S3_BUCKET}"])
+        self.store = filesapi.NewS3FileStore(CcProfile, bucket=os.environ[f"{CcProfile}_{AwsS3Bucket}"])
 
         # grab the payload
 

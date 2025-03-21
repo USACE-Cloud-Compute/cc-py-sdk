@@ -29,7 +29,7 @@ class S3DataStore(IConnectionDataStore, IStoreReader, IStoreWriter):
 
     def connect(self, ds: DataStore):
         self.data_store = ds
-        bucket = os.environ[f"{ds.profile}_{S3_BUCKET}"]
+        bucket = os.environ[f"{ds.profile}_{AwsS3Bucket}"]
         self.filestore = NewS3FileStore(ds.profile, bucket)
 
     def get(self, path: str, datapath: str) -> IStreamingBody:

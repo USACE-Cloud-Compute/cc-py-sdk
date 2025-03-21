@@ -5,10 +5,11 @@ from collections import namedtuple
 import boto3
 from boto3.s3.transfer import TransferConfig
 
-S3_ID = "AWS_ACCESS_KEY_ID"
-S3_KEY = "AWS_SECRET_ACCESS_KEY"
-S3_REGION = "AWS_REGION"
-S3_BUCKET = "AWS_BUCKET"
+AwsAccessKeyId = "AWS_ACCESS_KEY_ID"
+AwsSecretAccessKey = "AWS_SECRET_ACCESS_KEY"
+AwsDefaultRegion = "AWS_DEFAULT_REGION"
+AwsS3Bucket = "AWS_S3_BUCKET"
+AwsEndpoint = "AWS_ENDPOINT"
 
 S3_TRANSFER_CONCURRENCY = 5
 MULTIPART_THRESHOLD = 1024 * 1024 * 1000  # 1GB Threshold
@@ -59,13 +60,13 @@ class S3FileInfo:
 
 
 def NewS3FileStore(profile, bucket):
-    # session = boto3.session.Session(profile_name=profile)
     session = boto3.Session(
-        aws_access_key_id=os.environ[f"{profile}_{S3_ID}"],
-        aws_secret_access_key=os.environ[f"{profile}_{S3_KEY}"],
-        region_name=os.environ[f"{profile}_{S3_REGION}"],
+        aws_access_key_id=os.environ[f"{profile}_{AwsAccessKeyId}"],
+        aws_secret_access_key=os.environ[f"{profile}_{AwsSecretAccessKey}"],
+        region_name=os.environ[f"{profile}_{AwsDefaultRegion}"],
     )
-    return S3FileStore(session, bucket)
+    endpoint = os.environ.get(f"{profile}_{AwsEndpoint}", None)
+    return S3FileStore(session, endpoint, bucket)
 
 
 class S3FileStore:
@@ -91,11 +92,13 @@ class S3FileStore:
         uses the boto3 upload_fileobj and supports large multipart uploads
     """
 
-    def __init__(self, session, bucket):
+    def __init__(self, session, endpoint, bucket):
         self.bucket = bucket
         self.session = session
-        self.resource = self.session.resource("s3")
-        self.client = self.session.client("s3")
+        self.resource = self.session.resource("s3", endpoint_url=endpoint)
+        self.client = self.session.client("s3", endpoint_url=endpoint)
+        # session.client("s3", endpoint_url=endpoint)
+        # s3_resource = session.resource("s3", endpoint_url=endpoint)
 
     def get_object_info(self, path) -> S3FileInfo:
         s3Path = path.removeprefix("/")

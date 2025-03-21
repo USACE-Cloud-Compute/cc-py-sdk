@@ -2,4 +2,4 @@
 
 __author__ = """Randal Goss"""
 __email__ = "randal.s.goss@usace.army.mil"
-__version__ = "0.1.0"
+__version__ = "0.9.0"
