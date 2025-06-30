@@ -5,7 +5,7 @@ import json
 import shutil
 import logging
 from collections import namedtuple
-from typing import List, Dict
+from typing import Optional, List
 from enum import Enum
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
@@ -68,10 +68,10 @@ class DataSource:
         The name of the DataStore that holds the DataSet. readonly
     """
 
-    name: str
-    paths: dict
-    data_paths: dict
-    store_name: str
+    name: str = ""
+    paths: dict = field(default_factory=dict)
+    store_name: str = ""
+    data_paths: dict[str, str] = field(default_factory=dict)
     id: str = ""  # allow for optional id vals
 
 
@@ -96,12 +96,13 @@ class Action:
         the list of output DataSources private to the action. readonly
     """
 
-    type: str
-    description: str
-    attributes: dict
-    stores: List[DataStore]
-    inputs: List[DataSource]
-    outputs: List[DataSource]
+    name: str = ""
+    type: str = ""
+    description: str = ""
+    attributes: dict[str, str] = field(default_factory=dict)
+    stores: Optional[List["DataStore"]] = field(default_factory=list)
+    inputs: Optional[List["DataSource"]] = field(default_factory=list)
+    outputs: Optional[List["DataSource"]] = field(default_factory=list)
 
     def inputs(self) -> List[DataSource]:
         return self._iomgr.inputs
@@ -150,11 +151,11 @@ class Action:
 @dataclass_json
 @dataclass
 class Payload:
-    attributes: dict
-    stores: List[DataStore]
-    inputs: List[DataSource]
-    outputs: List[DataSource]
-    actions: List[Action]
+    attributes: dict[str, str] = field(default_factory=dict)
+    stores: List["DataStore"] = field(default_factory=list)
+    inputs: List["DataSource"] = field(default_factory=list)
+    outputs: List["DataSource"] = field(default_factory=list)
+    actions: List[Action] = field(default_factory=list)
     # __iomgr: any
     _iomgr: any = field(init=False)
 

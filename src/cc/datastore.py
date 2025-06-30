@@ -33,7 +33,7 @@ class DataStore:
     name: str
     store_type: str
     profile: str
-    params: dict
+    params: dict = field(default_factory=dict)
     id: str = ""  # allow for optional id vals
     _session: any = field(init=False)
 
