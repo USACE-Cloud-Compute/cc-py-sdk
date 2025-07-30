@@ -14,6 +14,7 @@ from cc.datastore_s3 import S3DataStore  # used in globals lookup
 from cc.filesapi import *
 from cc import filesapi
 from cc import logger
+from cc import action_runner
 
 CcPayloadId = "CC_PAYLOAD_ID"
 CcManifestId = "CC_MANIFEST_ID"
@@ -209,6 +210,15 @@ class PluginManager:
                     store._session = instance
 
         self._substitutePathVariables()
+
+    def run_actions(self):
+        for action in self.payload.actions:
+            runner_class = action_runner.get_action_runner(action.name)
+            if hasattr(runner_class, "run") and callable(getattr(runner_class, "run")):
+                runner = runner_class()
+                runner.pm = self
+                runner.action = action
+                runner.run()
 
     def get_payload(self) -> Payload:
         return self.payload
