@@ -280,11 +280,11 @@ class PluginManager:
 
         for action in self.payload.actions:
             for input in action._iomgr.inputs:
-                _handle_param_substitution(input.paths, self._iomgr.attributes | action._iomgr.attributes)
+                # _handle_param_substitution(input.paths, self._iomgr.attributes | action._iomgr.attributes)
                 _handle_param_substitution(input.data_paths, self._iomgr.attributes | action._iomgr.attributes)
 
             for output in action._iomgr.outputs:
-                _handle_param_substitution(output.paths, self._iomgr.attributes | action._iomgr.attributes)
+                # _handle_param_substitution(output.paths, self._iomgr.attributes | action._iomgr.attributes)
                 _handle_param_substitution(output.data_paths, self._iomgr.attributes | action._iomgr.attributes)
 
 
