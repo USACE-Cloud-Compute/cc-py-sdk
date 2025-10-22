@@ -33,9 +33,5 @@ jobs:
       - name: Build distribution packages
         run: python setup.py sdist && python setup.py bdist_wheel
 
-      - name: Publish to GitHub Packages
-        env:
-          TWINE_USERNAME: ${{ github.actor }}
-          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }} # Use the GITHUB_TOKEN provided by GitHub Actions
-          TWINE_REPOSITORY_URL: https://pypi.pkg.github.com/${{ env.OWNER }}
-        run: twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/*
+      - name: Publish to PyPI
+        run: twine upload dist/*
