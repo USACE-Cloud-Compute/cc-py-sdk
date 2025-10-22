@@ -1,0 +1,41 @@
+name: Publish Python SDK to GitHub Packages
+
+on:
+  release:
+    types: [published]
+
+env:
+  OWNER: usace-cloud-compute
+  IMAGE_NAME: fragility-curve-plugin
+  TAG: latest
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools twine
+
+      - name: Build distribution packages
+        run: python setup.py sdist && python setup.py bdist_wheel
+
+      - name: Publish to GitHub Packages
+        env:
+          TWINE_USERNAME: ${{ github.actor }}
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }} # Use the GITHUB_TOKEN provided by GitHub Actions
+          TWINE_REPOSITORY_URL: https://pypi.pkg.github.com/${{ env.OWNER }}
+        run: twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/*
