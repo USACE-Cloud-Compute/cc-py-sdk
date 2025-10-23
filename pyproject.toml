@@ -1,39 +1,22 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "cc_py_sdk"
-version = "0.1.0"
-description = "The sdk"
-readme = "README.rst"
-authors = [
-  {name = "Randal Goss", email = "randal.s.goss@usace.army.mil"}
-]
-maintainers = [
-  {name = "Randal Goss", email = "randal.s.goss@usace.army.mil"}
-]
-classifiers = [
-
-]
-license = {text = "MIT license"}
+dynamic = ["version"]
+description = "The python sdk for USACE Cloud Compute"
+readme = "README.md"
+requires-python = ">= 3.8"
+license-files = ["LICENSE"]
 dependencies = [
-  "typer"
+  "boto3",
+  "dataclasses-json",
+  "numpy",
+  "tiledb",
+  "typing-inspect",
+  "typing_extensions"
 ]
-
-[project.optional-dependencies]
-dev = [
-    "coverage",  # testing
-    "mypy",  # linting
-    "pytest",  # testing
-    "ruff"  # linting
-]
-
-[project.urls]
-
-bugs = "https://github.com/rgoss/cc_py_sdk/issues"
-changelog = "https://github.com/rgoss/cc_py_sdk/blob/master/changelog.md"
-homepage = "https://github.com/rgoss/cc_py_sdk"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -41,23 +24,5 @@ package-dir = {"" = "src"}
 [tool.setuptools.package-data]
 "*" = ["*.*"]
 
-
-
-
-# Mypy
-# ----
-
-[tool.mypy]
-files = "."
-
-# Use strict defaults
-strict = true
-warn_unreachable = true
-warn_no_return = true
-
-[[tool.mypy.overrides]]
-# Don't require test functions to include types
-module = "tests.*"
-allow_untyped_defs = true
-disable_error_code = "attr-defined"
-
+[tool.setuptools.dynamic]
+version = {attr = "cc.__version__"}
