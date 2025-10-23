@@ -1,7 +1,6 @@
 import logging
 import sys
 import os
-from enum import Enum
 
 CcLoggingLevel = "CC_LOGGING_LEVEL"
 
@@ -18,7 +17,9 @@ CcLoggingLevels = {
 def initLogger():
     cc_log_level = os.environ.get(CcLoggingLevel, "INFO")
     logging.basicConfig(
-        stream=sys.stdout, format="%(levelname)s | %(asctime)s | %(message)s", level=CcLoggingLevels[cc_log_level]
+        stream=sys.stdout,
+        format="%(levelname)s | %(asctime)s | %(message)s",
+        level=CcLoggingLevels[cc_log_level],
     )
     # file_handler = logging.FileHandler(filename="tmp.log")
     # stdout_handler = logging.StreamHandler(stream=sys.stdout)

@@ -1,5 +1,4 @@
 import os
-import abc
 from cc.filesapi import *
 from cc.datastore import (
     DataStore,

@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pandas
 import tiledb
 import cc.plugin_manager as pm
 from cc.datastore import DataStore
@@ -82,7 +81,9 @@ class TileDbEventStore:
             ctx=self.context,
         )
 
-        tiledb.Array.create(uri=self.uri + "/" + input.array_path, schema=schema, ctx=self.context)
+        tiledb.Array.create(
+            uri=self.uri + "/" + input.array_path, schema=schema, ctx=self.context
+        )
 
     def put_array(self, input: PutArrayInput):
 
@@ -93,7 +94,9 @@ class TileDbEventStore:
                 writeinput[buffer.attr_name] = buffer.buffer
                 # writeinput[buffer.attr_name] = (buffer.offsets, buffer.buffer)
 
-            with tiledb.DenseArray(uri=self.uri + "/" + input.array_path, mode="w", ctx=self.context) as array:
+            with tiledb.DenseArray(
+                uri=self.uri + "/" + input.array_path, mode="w", ctx=self.context
+            ) as array:
                 array[:] = writeinput
                 # array[input.buffer_range] = writeinput
 
@@ -105,7 +108,9 @@ class TileDbEventStore:
         for i in range(0, len(input.buffer_range), 2):
             slices.append(slice(input.buffer_range[i], input.buffer_range[i + 1]))
 
-        with tiledb.open(uri=self.uri + "/" + input.array_path, mode="r", ctx=self.context) as array:
+        with tiledb.open(
+            uri=self.uri + "/" + input.array_path, mode="r", ctx=self.context
+        ) as array:
             q = array.query(attrs=input.attrs)
             if input.df:
                 return q.df[*slices]

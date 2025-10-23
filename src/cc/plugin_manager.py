@@ -1,7 +1,5 @@
-import cc.filesapi
 import os
 import re
-import json
 import shutil
 import logging
 from collections import namedtuple
@@ -123,7 +121,9 @@ class Action:
     def get_output_data_source(self, name: str) -> DataSource:
         return self._iomgr.get_output_data_source(name)
 
-    def get_reader(self, data_source_name: str, pathkey: str, datapathkey: str) -> IStreamingBody:
+    def get_reader(
+        self, data_source_name: str, pathkey: str, datapathkey: str
+    ) -> IStreamingBody:
         return self._iomgr.get_reader(data_source_name, pathkey, datapathkey)
 
     def get(self, data_source_name: str, pathkey: str, datapathkey: str) -> bytes:
@@ -163,7 +163,9 @@ class Payload:
     def __post_init__(self):
         self._iomgr = Iomgr(self.attributes, self.stores, self.inputs, self.outputs)
         for action in self.actions:
-            action._iomgr = Iomgr(action.attributes, action.stores, action.inputs, action.outputs)
+            action._iomgr = Iomgr(
+                action.attributes, action.stores, action.inputs, action.outputs
+            )
 
     def get_store(self, name: str) -> DataStore:
         return self._iomgr.get_store(name)
@@ -183,7 +185,9 @@ class PluginManager:
             self.ccroot = DEFAULT_CC_ROOT
 
         # set the CC Store
-        self.store = filesapi.NewS3FileStore(CcProfile, bucket=os.environ[f"{CcProfile}_{AwsS3Bucket}"])
+        self.store = filesapi.NewS3FileStore(
+            CcProfile, bucket=os.environ[f"{CcProfile}_{AwsS3Bucket}"]
+        )
 
         # grab the payload
 
@@ -244,7 +248,9 @@ class PluginManager:
     def get_output_data_source(self, name: str) -> DataSource:
         return self._iomgr.get_output_data_source(name)
 
-    def get_reader(self, data_source_name: str, pathkey: str, datapathkey: str) -> IStreamingBody:
+    def get_reader(
+        self, data_source_name: str, pathkey: str, datapathkey: str
+    ) -> IStreamingBody:
         return self._iomgr.get_reader(data_source_name, pathkey, datapathkey)
 
     def get(self, data_source_name: str, pathkey: str, datapathkey: str) -> bytes:
@@ -281,11 +287,15 @@ class PluginManager:
         for action in self.payload.actions:
             for input in action._iomgr.inputs:
                 # _handle_param_substitution(input.paths, self._iomgr.attributes | action._iomgr.attributes)
-                _handle_param_substitution(input.data_paths, self._iomgr.attributes | action._iomgr.attributes)
+                _handle_param_substitution(
+                    input.data_paths, self._iomgr.attributes | action._iomgr.attributes
+                )
 
             for output in action._iomgr.outputs:
                 # _handle_param_substitution(output.paths, self._iomgr.attributes | action._iomgr.attributes)
-                _handle_param_substitution(output.data_paths, self._iomgr.attributes | action._iomgr.attributes)
+                _handle_param_substitution(
+                    output.data_paths, self._iomgr.attributes | action._iomgr.attributes
+                )
 
 
 class Iomgr:
@@ -344,7 +354,9 @@ class Iomgr:
         streamingBody = data_store._session.get(path, None)
         return streamingBody
 
-    def put(self, reader: IStreamingBody, data_source_name: str, pathkey: str, datakey: str):
+    def put(
+        self, reader: IStreamingBody, data_source_name: str, pathkey: str, datakey: str
+    ):
         data_source = self.get_output_data_source(data_source_name)
         data_store = self.get_store(data_source.store_name)
         # path=data_store.params["root"]+"/"+data_source.paths[pathkey]
