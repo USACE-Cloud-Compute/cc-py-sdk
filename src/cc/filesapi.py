@@ -1,7 +1,10 @@
+import fnmatch
+import mimetypes
 import os
 import abc
-from typing import List
+from typing import Iterable, List, Optional
 from collections import namedtuple
+from pathlib import Path
 import boto3
 from boto3.s3.transfer import TransferConfig
 
@@ -116,7 +119,9 @@ class S3FileStore:
         result = []
         for page in page_iterator:
             for prefix in page["CommonPrefixes"]:
-                fso = FileStoreResultObject(count, prefix["Prefix"], "", prefix["Prefix"], "", True, "", "")
+                fso = FileStoreResultObject(
+                    count, prefix["Prefix"], "", prefix["Prefix"], "", True, "", ""
+                )
                 result.append(fso)
                 count = count + 1
             for s3object in page["Contents"]:
@@ -148,3 +153,117 @@ class S3FileStore:
         )
 
         self.client.upload_fileobj(reader, self.bucket, s3Path, Config=config)
+
+    def put_folder(
+        self,
+        local_dir: str | os.PathLike,
+        dest_prefix: str,
+        include: Optional[Iterable[str]] = None,
+        exclude: Optional[Iterable[str]] = None,
+        follow_symlinks: bool = False,
+        public_read: bool = False,
+        cache_control: Optional[str] = None,
+        dry_run: bool = False,
+    ):
+        local_root = Path(local_dir).expanduser().resolve()
+        if not local_root.is_dir():
+            raise ValueError(f"Not a directory: {local_root}")
+
+        norm_prefix = dest_prefix.strip("/")
+        if norm_prefix:
+            norm_prefix = norm_prefix + "/"
+
+        include = list(include) if include is not None else ["**"]
+        exclude = (
+            list(exclude)
+            if exclude is not None
+            else [
+                "**/__pycache__/**",
+                "**/*.pyc",
+                "**/.DS_Store",
+                "**/.git/**",
+                "**/.pytest_cache/**",
+                "**/.mypy_cache/**",
+            ]
+        )
+
+        config = TransferConfig(
+            multipart_threshold=MULTIPART_THRESHOLD,
+            multipart_chunksize=MULTIPART_CHUNKSIZE,
+            max_concurrency=S3_TRANSFER_CONCURRENCY,
+            use_threads=True,
+        )
+
+        uploaded_keys: List[str] = []
+
+        def _matches_any(path_rel_posix: str, patterns: Iterable[str]) -> bool:
+            return any(fnmatch.fnmatch(path_rel_posix, pat) for pat in patterns)
+
+        for root, dirs, files in os.walk(local_root, followlinks=follow_symlinks):
+            root_path = Path(root)
+            rel_dir = (
+                ""
+                if root_path == local_root
+                else str(root_path.relative_to(local_root).as_posix())
+            )
+
+            # Allow exclude rules to prune whole dirs (speed optimization)
+            pruned_dirs = []
+            for d in list(dirs):
+                rel_dir_path = f"{rel_dir}/{d}" if rel_dir else d
+                if _matches_any(rel_dir_path + "/", exclude):
+                    pruned_dirs.append(d)
+            for d in pruned_dirs:
+                dirs.remove(d)
+
+            for fname in files:
+                abs_file = root_path / fname
+                rel_path = f"{rel_dir}/{fname}" if rel_dir else fname
+                rel_posix = rel_path.replace("\\", "/")
+
+                # include first, then exclude
+                if not _matches_any(rel_posix, include):
+                    continue
+                if _matches_any(rel_posix, exclude):
+                    continue
+
+                # Resolve symlinks to actual file content (if present)
+                if abs_file.is_symlink():
+                    try:
+                        abs_file = abs_file.resolve(strict=True)
+                    except FileNotFoundError:
+                        # Broken symlink -> skip
+                        continue
+
+                if not abs_file.is_file():
+                    # Skip non-files (e.g., sockets, FIFOs)
+                    continue
+
+                # Build S3 key
+                key = f"{norm_prefix}{rel_posix}"
+
+                # Guess Content-Type
+                ctype, _ = mimetypes.guess_type(abs_file.name)
+                extra_args = {}
+                if ctype:
+                    extra_args["ContentType"] = ctype
+                if public_read:
+                    extra_args["ACL"] = "public-read"
+                if cache_control:
+                    extra_args["CacheControl"] = cache_control
+
+                if dry_run:
+                    print(f"[DRY-RUN] s3://{self.bucket}/{key}  <=  {abs_file}")
+                    uploaded_keys.append(key)
+                    continue
+
+                self.client.upload_file(
+                    Filename=str(abs_file),
+                    Bucket=self.bucket,
+                    Key=key,
+                    ExtraArgs=extra_args or None,
+                    Config=config,
+                )
+                uploaded_keys.append(key)
+
+        return uploaded_keys

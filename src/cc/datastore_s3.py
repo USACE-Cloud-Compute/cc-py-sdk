@@ -38,3 +38,6 @@ class S3DataStore(IConnectionDataStore, IStoreReader, IStoreWriter):
     def put(self, reader: IStreamingBody, destpath: str, datapath: str):
         # s3 file store does not use the data path
         self.filestore.put_object(destpath, reader)
+
+    def put_folder(self, path: str, dest_prefix: str):
+        self.filestore.put_folder(path, dest_prefix)
