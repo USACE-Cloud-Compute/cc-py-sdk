@@ -3,7 +3,7 @@ import re
 import shutil
 import logging
 from collections import namedtuple
-from typing import Optional, List
+from typing import Any, Dict, Optional, List
 from enum import Enum
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
@@ -13,6 +13,7 @@ from cc.filesapi import *
 from cc import filesapi
 from cc import logger
 from cc import action_runner
+from cc.template_substitution import template_substitute
 
 CcPayloadId = "CC_PAYLOAD_ID"
 CcManifestId = "CC_MANIFEST_ID"
@@ -73,6 +74,14 @@ class DataSource:
     data_paths: dict[str, str] = field(default_factory=dict)
     id: str = ""  # allow for optional id vals
 
+    def to_json_serializable(self):
+        return {
+            "name": self.name,
+            "paths": self.paths,
+            "store_name": self.store_name,
+            "data_paths": self.data_paths,
+        }
+
 
 @dataclass_json
 @dataclass
@@ -102,6 +111,29 @@ class Action:
     stores: Optional[List["DataStore"]] = field(default_factory=list)
     inputs: Optional[List["DataSource"]] = field(default_factory=list)
     outputs: Optional[List["DataSource"]] = field(default_factory=list)
+
+    def to_json_serializable(self):
+        return {
+            "name": self.name,
+            "type": self.type,
+            "description": self.description,
+            "attributes": self.attributes,
+            "stores": (
+                [d.to_json_serializable() for d in self.stores]
+                if self.stores is not None
+                else []
+            ),
+            "inputs": (
+                [d.to_json_serializable() for d in self.inputs]
+                if self.inputs is not None
+                else []
+            ),
+            "outputs": (
+                [d.to_json_serializable() for d in self.outputs]
+                if self.outputs is not None
+                else []
+            ),
+        }
 
     def inputs(self) -> List[DataSource]:
         return self._iomgr.inputs
@@ -148,16 +180,18 @@ class Action:
     def copy_file_to_remote(self, ds: DataSourceOpInput, localpath: str):
         return self._iomgr.copy_file_to_remote(ds, localpath)
 
+    def copy_folder_to_remote(self, ds: DataSourceOpInput, localpath: str):
+        return self._iomgr.copy_folder_to_remote(ds, localpath)
+
 
 @dataclass_json
 @dataclass
 class Payload:
-    attributes: dict[str, str] = field(default_factory=dict)
+    attributes: dict[str, str | list | dict] = field(default_factory=dict)
     stores: List["DataStore"] = field(default_factory=list)
     inputs: List["DataSource"] = field(default_factory=list)
     outputs: List["DataSource"] = field(default_factory=list)
     actions: List[Action] = field(default_factory=list)
-    # __iomgr: any
     _iomgr: any = field(init=False)
 
     def __post_init__(self):
@@ -204,6 +238,12 @@ class PluginManager:
             self.payload.outputs,
         )
 
+        self._substituteAttributeTemplates()
+        self._substituteStoreTemplates()
+        self._substituteInputTemplates()
+        self._substituteOutputTemplates()
+        self._substituteActionTemplates()
+
         # enumerate stores and connect to ones that implement IConnectionDataStore
         for store in self.payload.stores:
             classType = storeTypeToClassMap.get(store.store_type, None)
@@ -212,8 +252,6 @@ class PluginManager:
                 if isinstance(instance, IConnectionDataStore):
                     instance.connect(store)
                     store._session = instance
-
-        self._substitutePathVariables()
 
     def run_actions(self):
         for action in self.payload.actions:
@@ -275,27 +313,59 @@ class PluginManager:
     def copy_file_to_remote(self, ds: DataSourceOpInput, localpath: str):
         return self._iomgr.copy_file_to_remote(ds, localpath)
 
-    def _substitutePathVariables(self):
+    def copy_folder_to_remote(self, ds: DataSourceOpInput, localpath: str):
+        return self._iomgr.copy_folder_to_remote(ds, localpath)
+
+    def _substituteAttributeTemplates(self):
+        _handle_template_substitution(self._iomgr.attributes, self._iomgr.attributes)
+
+    def _substituteStoreTemplates(self):
+        for store in self._iomgr.stores:
+            _handle_template_substitution(store.params, self._iomgr.attributes, False)
+
+    def _substituteInputTemplates(self):
         for input in self._iomgr.inputs:
-            _handle_param_substitution(input.paths, self._iomgr.attributes)
-            _handle_param_substitution(input.data_paths, self._iomgr.attributes)
+            new_name = template_substitute(
+                "name", input.name, self._iomgr.attributes, False
+            )
+            input.name = new_name.get("name")
+            _handle_template_substitution(input.paths, self._iomgr.attributes)
+            _handle_template_substitution(input.data_paths, self._iomgr.attributes)
 
+    def _substituteOutputTemplates(self):
         for output in self._iomgr.outputs:
-            _handle_param_substitution(output.paths, self._iomgr.attributes)
-            _handle_param_substitution(output.data_paths, self._iomgr.attributes)
+            new_name = template_substitute(
+                "name", output.name, self._iomgr.attributes, False
+            )
+            output.name = new_name.get("name")
+            _handle_template_substitution(output.paths, self._iomgr.attributes)
+            _handle_template_substitution(output.data_paths, self._iomgr.attributes)
 
+    def _substituteActionTemplates(self):
         for action in self.payload.actions:
+            # run templates for action attributes
+            _handle_template_substitution(
+                action._iomgr.attributes, self._iomgr.attributes
+            )
+
+            # combine action and payload attributes for conciseness
+            combined_attrs = self._iomgr.attributes | action._iomgr.attributes
+
             for input in action._iomgr.inputs:
-                # _handle_param_substitution(input.paths, self._iomgr.attributes | action._iomgr.attributes)
-                _handle_param_substitution(
-                    input.data_paths, self._iomgr.attributes | action._iomgr.attributes
+                new_name = template_substitute(
+                    "name", input.name, combined_attrs, False
                 )
+                action.name = new_name.get("name")
+                _handle_template_substitution(input.paths, combined_attrs)
+                _handle_template_substitution(input.data_paths, combined_attrs)
 
             for output in action._iomgr.outputs:
-                # _handle_param_substitution(output.paths, self._iomgr.attributes | action._iomgr.attributes)
-                _handle_param_substitution(
-                    output.data_paths, self._iomgr.attributes | action._iomgr.attributes
+                new_name = template_substitute(
+                    "name", output.name, combined_attrs, False
                 )
+                action.name = new_name.get("name")
+                _handle_template_substitution(output.paths, combined_attrs)
+                _handle_template_substitution(output.data_paths, combined_attrs)
 
 
 class Iomgr:
@@ -389,22 +459,37 @@ class Iomgr:
         with open(localpath, "rb") as f:
             deststore._session.put(f, destpath, None)
 
+    def copy_folder_to_remote(self, dest: DataSourceOpInput, localpath: str):
+        dest_ds = self.get_output_data_source(dest.name)
+        deststore = self.get_store(dest_ds.store_name)
+        destpath = deststore.full_path(dest_ds.paths[dest.pathkey])
+        deststore._session.put_folder(localpath, destpath)
 
-def _handle_param_substitution(paths: dict, attrs: dict):
-    if paths != None and len(paths) > 0:
-        for name, path in paths.items():
-            newpath = _parameter_substitute(path, attrs)
-            paths[name] = newpath
 
+def _handle_template_substitution(
+    templates: dict, values: dict, allow_expansion: bool = True
+):
+    def template_walk(d: dict | list):
+        if isinstance(d, dict):
+            updates = {}
+            expanded = []
+            for k, v in d.items():
+                if isinstance(v, str):
+                    filled = template_substitute(k, v, values, allow_expansion)
+                    if len(filled) > 1:
+                        expanded.append(k)
+                    updates |= filled
+                else:
+                    template_walk(v)
+            d |= updates
+            for k in expanded:
+                del d[k]
+        elif isinstance(d, list):
+            for i, v in enumerate(d):
+                if isinstance(v, str):
+                    filled = template_substitute(i, v, values, False)
+                    d[i] = filled[i]
+                else:
+                    template_walk(v)
 
-def _parameter_substitute(path: str, attrs: dict) -> str:
-    submatches = re.findall(substitutionPattern, path)
-    for sub in submatches:
-        parts = sub.split("::")
-        match parts[0]:
-            case "ATTR":
-                newval = attrs[parts[1]]
-            case "ENV":
-                newval = os.environ[parts[1]]
-        path = path.replace(f"{{{sub}}}", newval)
-    return path
+    template_walk(templates)
