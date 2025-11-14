@@ -43,6 +43,14 @@ class DataStore:
     def full_path(self, relative_path: str) -> str:
         return self.params["root"] + "/" + relative_path
 
+    def to_json_serializable(self):
+        return {
+            "name": self.name,
+            "store_type": self.store_type,
+            "profile": self.profile,
+            "params": self.params,
+        }
+
 
 class IConnectionDataStore(metaclass=abc.ABCMeta):
     """
